@@ -4,15 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Akun Botani | PisangLENS</title>
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/app.css?v=mobile-logout-2">
+    <link rel="stylesheet" href="css/dashboard.css?v=mobile-header-3">
     <script type="module" src="js/botani.js"></script>
 </head>
 <body>
     <main data-role="botani">
         <div id="staff-panel" class="dashboard-layout" hidden>
             <aside class="dashboard-sidebar">
-            <a class="brand" href="#dashboard">PisangLENS <small>RUANG BOTANI</small></a>
+            <div class="dashboard-brand-row">
+                    <a class="brand" href="#dashboard">PisangLENS <small>RUANG BOTANI</small></a>
+                    <button class="secondary logout-button" id="staff-logout" type="button">Keluar</button>
+            </div>
             <nav class="dashboard-nav" aria-label="Navigasi botani">
                 <a href="#dashboard">Beranda</a>
                 <a href="#antrean">Antrean Tiket</a>
@@ -21,7 +24,6 @@
                 <a href="#akun">Akun</a>
             </nav>
             <p>Peninjauan pakar untuk kesehatan daun pisang.</p>
-            <button class="secondary" id="staff-logout" type="button">Keluar</button>
             </aside>
             <div class="dashboard-main">
             <header class="dashboard-header"><div><p class="eyebrow">PAKAR / KONSULTASI DAUN</p><h1 id="dashboard-title">Beranda Botani</h1></div><span id="botanist-badge" class="badge">Status akun</span></header>

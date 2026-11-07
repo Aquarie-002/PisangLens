@@ -1,0 +1,8 @@
+/* Admin-only critical header layout, independent of older dashboard stylesheets. */
+@media (max-width: 51.999rem) {
+    main[data-role="admin"] .dashboard-sidebar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+    main[data-role="admin"] .dashboard-sidebar > .dashboard-brand-row { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; grid-column: 1; grid-row: 1; }
+    main[data-role="admin"] .dashboard-brand-row > .brand { flex: 1 1 auto; min-width: 0; }
+    main[data-role="admin"] #staff-logout { flex: 0 0 auto; width: auto; min-height: 2.25rem; margin: 0; padding: .3rem .65rem; font-size: .8125rem; font-weight: 600; white-space: nowrap; color: #e0eee3; background: transparent; border-color: #789786; }
+    main[data-role="admin"] .dashboard-sidebar > .dashboard-nav { grid-column: 1; grid-row: 2; min-width: 0; max-width: 100%; margin: 0; overflow-x: auto; }
+}
