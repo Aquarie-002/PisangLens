@@ -6,7 +6,7 @@
     <title>Ruang Petani | PisangLENS</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="css/app.css">
-    <script type="module" src="js/petani.js"></script>
+    <script type="module" src="js/petani.js?v=automatic-2"></script>
 </head>
 <body>
     <header class="site-header">
@@ -40,16 +40,9 @@
                 <p id="photo-message" class="message" role="status"></p>
             </div>
             <div class="panel">
-                <h2>Simulasi prediksi</h2>
-                <p>Pilih keluaran uji. Foto diperiksa kecerahannya sebelum simulasi.</p>
-                <label for="prediction-scenario">Skenario uji</label>
-                <select id="prediction-scenario">
-                    <option value="healthy">Sehat</option>
-                    <option value="disease">Terindikasi penyakit</option>
-                    <option value="low">Keyakinan rendah</option>
-                    <option value="failure">Prediksi gagal</option>
-                </select>
-                <button id="predict" type="button" disabled>Jalankan simulasi</button>
+                <h2>Analisis foto</h2>
+                <p>Model AI belum tersedia. Untuk sementara, hasil uji tetap ditampilkan; foto hanya diperiksa kualitas pencahayaannya.</p>
+                <button id="predict" type="button" disabled>Analisis foto</button>
                 <p id="prediction-message" class="message" role="status"></p>
                 <section id="prediction-result" aria-labelledby="result-title" hidden>
                     <h3 id="result-title">Hasil identifikasi awal</h3>

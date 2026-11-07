@@ -57,7 +57,7 @@ async function waitFor(check, label) {
 async function browser(port) {
     const profile = mkdtempSync(join(tmpdir(), 'pisanglens-checkpoint4-'));
     const child = spawn(process.env.PISANGLENS_TEST_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', [
-        '--headless=new', '--no-first-run', '--disable-background-networking',
+        '--headless=new', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--no-first-run', '--disable-background-networking',
         '--remote-debugging-port=' + port, '--user-data-dir=' + profile, 'about:blank',
     ], { windowsHide: true, stdio: 'ignore' });
     processes.push(child);
@@ -181,10 +181,33 @@ async function main() {
     let botToken = await botanist.staffToken();
     await botanist.evaluate("location.hash='akun'");
     await botanist.check("document.querySelectorAll('datalist[id$=province-examples] option').length===3 && document.getElementById('profile-region-help').textContent.includes('contoh terbatas')", 'region examples explicitly limited');
+    assert.equal(await farmer.evaluate("document.querySelector('#prediction-scenario')===null && !document.body.textContent.includes('Skenario uji')"), true);
+    await farmer.evaluate("window.injectTestFile=file=>{const d=new DataTransfer();d.items.add(file);const i=document.getElementById('image-file');i.files=d.files;i.dispatchEvent(new Event('change'))}");
+    for (const [file, error] of [
+        ["new File(['text'],'bad.txt',{type:'text/plain'})", 'berformat'],
+        ["new File(['broken'],'bad.png',{type:'image/png'})", 'tidak dapat dibuka'],
+        ["new File([new Uint8Array(5242881)],'large.png',{type:'image/png'})", 'maksimal 5 MB'],
+    ]) {
+        await farmer.evaluate('injectTestFile(' + file + ')');
+        await farmer.check('document.getElementById("photo-message").textContent.includes(' + JSON.stringify(error) + ') && document.getElementById("predict").disabled', 'invalid photo rejected: ' + error);
+    }
+    for (const [gray, error] of [[10, 'terlalu gelap'], [250, 'terlalu terang']]) {
+        await farmer.evaluate(`(async()=>{const c=document.createElement('canvas');c.width=c.height=224;const x=c.getContext('2d');x.fillStyle='rgb(${gray},${gray},${gray})';x.fillRect(0,0,224,224);injectTestFile(new File([await new Promise(r=>c.toBlob(r,'image/png'))],'quality.png',{type:'image/png'}))})()`);
+        await farmer.check('document.getElementById("photo-message").textContent.includes(' + JSON.stringify(error) + ') && document.getElementById("predict").disabled', error);
+    }
+    await farmer.evaluate("window.originalCamera=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('Denied','NotAllowedError')};document.getElementById('camera-start').click()");
+    await farmer.check("document.getElementById('photo-message').textContent.includes('Izin kamera ditolak')", 'camera permission error');
+    await farmer.evaluate("navigator.mediaDevices.getUserMedia=window.originalCamera;document.getElementById('camera-start').click()");
+    await farmer.check("document.getElementById('camera-video').readyState>=2&&!document.getElementById('camera-capture').hidden", 'Chrome virtual camera opens');
+    await farmer.evaluate("document.getElementById('camera-capture').click()");
+    await farmer.check("!document.getElementById('image-preview').hidden&&!document.getElementById('predict').disabled", 'Chrome virtual camera captures');
     await farmer.upload();
     await farmer.evaluate("document.getElementById('predict').click()");
     await farmer.check("document.getElementById('result-summary').textContent.includes('Healthy') && document.getElementById('result-consult').children.length===0", 'Healthy high-confidence behavior');
-    await farmer.evaluate("document.getElementById('prediction-scenario').value='disease';document.getElementById('predict').click()");
+    assert.equal(await farmer.evaluate("document.getElementById('result-summary').textContent.includes('Simulasi prediksi \\u2014 bukan hasil analisis foto')"), true);
+    await farmer.evaluate("(async()=>{(await import('/js/predict.js')).setPredictionScenario('failure');document.getElementById('predict').click()})()");
+    await farmer.check("document.getElementById('prediction-message').textContent.includes('gagal') && !document.getElementById('predict').disabled", 'internal prediction error is recoverable');
+    await farmer.evaluate("(async()=>{(await import('/js/predict.js')).setPredictionScenario('disease');document.getElementById('predict').click()})()");
     await farmer.check("document.querySelector('#result-consult a') && document.getElementById('result-summary').textContent.includes('Simulasi prediksi')", 'disease prediction remains labelled simulation');
     await farmer.evaluate("document.querySelector('#result-consult a').click()");
     await farmer.check("!document.getElementById('consultation-form').hidden && document.getElementById('consultation-detail').textContent.includes('Konsultasi nyata') && document.querySelector('#consultation-photo img')?.naturalWidth>0", 'photo and initial question draft');
@@ -305,9 +328,9 @@ async function main() {
     assert.equal(sql('SELECT COUNT(*) FROM chat_messages WHERE consultation_id=' + ticket.id), beforeInvalid);
     console.log('PASS API/MySQL: participant privacy, live verification, role separation and profile ownership');
 
-    await farmer.evaluate("document.getElementById('consultation-back').click();location.hash='kamera';document.getElementById('prediction-scenario').value='low';");
+    await farmer.evaluate("document.getElementById('consultation-back').click();location.hash='kamera';");
     await farmer.upload();
-    await farmer.evaluate("document.getElementById('predict').click()");
+    await farmer.evaluate("(async()=>{(await import('/js/predict.js')).setPredictionScenario('low');document.getElementById('predict').click()})()");
     await farmer.check("document.querySelector('.result.amber') && document.querySelector('#result-consult a')", 'low-confidence eligibility regression');
     await farmer.evaluate("document.querySelector('#result-consult a').click()");
     await farmer.check("!document.getElementById('consultation-form').hidden", 'low-confidence server consultation');
@@ -341,7 +364,7 @@ async function main() {
             await client.check("document.documentElement.scrollWidth<=innerWidth", 'dashboard responsive width ' + width);
         }
     }
-    await farmer.check("(async()=>{const cache=await caches.open('pisanglens-shell-v10');const keys=await cache.keys();return keys.length===30&&keys.every(r=>!r.url.includes('/api/'));})()", 'private API responses excluded from shell cache');
+    await farmer.check("(async()=>{const cache=await caches.open('pisanglens-shell-v12');const keys=await cache.keys();return keys.length===31&&keys.every(r=>!r.url.includes('/api/'));})()", 'private API responses excluded from shell cache');
 
     await botanist.evaluate("document.getElementById('staff-logout').click()");
     await botanist.check("location.pathname==='/index.html' && location.search==='?role=botani'", 'Botanist logout role redirect');
@@ -358,7 +381,7 @@ async function main() {
     await farmer.evaluate("localStorage.setItem('pisanglens-farmer-profile', JSON.stringify({ownerId:'demo:petani',role:'petani',name:'Petani Demo',demo:true}));location.assign('petani-kamera.html')");
     await farmer.check("document.getElementById('account-mode')?.textContent.includes('Simulasi masuk')", 'explicit Farmer demo');
     await farmer.upload();
-    await farmer.evaluate("document.getElementById('prediction-scenario').value='disease';document.getElementById('predict').click()");
+    await farmer.evaluate("(async()=>{(await import('/js/predict.js')).setPredictionScenario('disease');document.getElementById('predict').click()})()");
     await farmer.check("Boolean(document.querySelector('#result-consult a'))", 'demo consultation eligibility');
     await farmer.evaluate("document.querySelector('#result-consult a').click()");
     await farmer.check("document.getElementById('consultation-detail').textContent.includes('Simulasi konsultasi lokal') && !document.getElementById('consultation-form').hidden", 'local demo ticket');

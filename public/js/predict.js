@@ -6,8 +6,10 @@ const scenarios = {
     low: ['Cordana Leaf Spot', 0.64],
 };
 
+// Deterministic default fixture; it does not inspect image contents.
 let scenario = 'healthy';
 
+// Automated tests may select fixtures directly; no public controls use this hook.
 export function setPredictionScenario(value) {
     scenario = value;
 }

@@ -1,7 +1,7 @@
 import { requestApi } from './api.js';
 import { activeProfile, forgetToken, logout, PROFILE_KEY, sessionToken } from './auth.js';
 import { capture, closeCamera, openCamera, uploadPhoto } from './camera.js';
-import { CONFIDENCE_THRESHOLD, FALLBACK } from './config.js';
+import { CONFIDENCE_THRESHOLD, FALLBACK, MOCK_PREDICTION_LABEL } from './config.js';
 import { consultationEligible, consultationService, consultationStatus } from './consultations.js';
 import { openConversation } from './chat.js';
 import { encryptMessage } from './crypto.js';
@@ -9,7 +9,7 @@ import { scanPhoto } from './photos.js';
 import { initializeDirectory } from './directory.js';
 import { saveScan, scansFor } from './db.js';
 import { conditions } from './dictionary.js';
-import { predict, setPredictionScenario } from './predict.js';
+import { predict } from './predict.js';
 import { syncScans } from './sync.js';
 
 const element = id => document.getElementById(id);
@@ -129,7 +129,7 @@ function initialize(account) {
             photo = await load();
             preview.hidden = false;
             predictButton.disabled = false;
-            element('photo-message').textContent = 'Foto siap untuk simulasi.';
+            element('photo-message').textContent = 'Foto siap. Pilih Analisis foto untuk melanjutkan.';
         } catch (error) {
             element('photo-message').textContent = error.message;
         } finally {
@@ -179,9 +179,8 @@ function initialize(account) {
         const source = photo;
         predictButton.disabled = true;
         element('prediction-result').hidden = true;
-        element('prediction-message').textContent = 'Menjalankan simulasi…';
+        element('prediction-message').textContent = 'Memproses permintaan…';
         try {
-            setPredictionScenario(element('prediction-scenario').value);
             const prediction = await predict(source.input);
             if (photo !== source || !sameAccount()) return;
             result = {
@@ -244,7 +243,7 @@ function initialize(account) {
     });
 
     function scanLabel(scan) {
-        const simulation = scan.prediction_source === 'mock' ? ' · Simulasi prediksi' : '';
+        const simulation = scan.prediction_source === 'mock' ? ' · ' + MOCK_PREDICTION_LABEL : '';
         return `${scan.predicted_class} · Keyakinan ${percentage.format(scan.confidence_score)}${simulation}`;
     }
 
@@ -346,7 +345,7 @@ function initialize(account) {
         const updateDetail = updated => {
             const stage = updated.status === 'closed' ? 'Ditutup' : updated.status === 'answered' ? 'Dibalas Botani'
                 : updated.botani_id ? 'Ditangani Botani' : 'Menunggu Botani';
-            element('consultation-detail').textContent = `${simulated ? 'Simulasi konsultasi lokal · ' : 'Konsultasi nyata · '}${updated.prediction_source === 'mock' ? 'Simulasi prediksi · ' : ''}Status: ${stage}`;
+            element('consultation-detail').textContent = `${simulated ? 'Simulasi konsultasi lokal · ' : 'Konsultasi nyata · '}${updated.prediction_source === 'mock' ? MOCK_PREDICTION_LABEL + ' · ' : ''}Status: ${stage}`;
         };
         updateDetail(ticket);
         disposeConsultationPhoto = scanPhoto(element('consultation-photo'), ticket, simulated ? null : sessionToken(account),
@@ -411,7 +410,7 @@ function initialize(account) {
                 const row = document.createElement('li');
                 const text = document.createElement('p');
                 const button = document.createElement('button');
-                text.textContent = `${ticket.simulation ? 'Simulasi konsultasi lokal · ' : 'Konsultasi nyata · '}${ticket.prediction_source === 'mock' ? 'Simulasi prediksi · ' : ''}${ticket.predicted_class || 'Pemindaian daun'} · ${consultationStatus(ticket.status)}`;
+                text.textContent = `${ticket.simulation ? 'Simulasi konsultasi lokal · ' : 'Konsultasi nyata · '}${ticket.prediction_source === 'mock' ? MOCK_PREDICTION_LABEL + ' · ' : ''}${ticket.predicted_class || 'Pemindaian daun'} · ${consultationStatus(ticket.status)}`;
                 button.type = 'button';
                 button.textContent = 'Buka percakapan';
                 button.addEventListener('click', () => showConversation(ticket, Boolean(ticket.simulation)));
@@ -534,7 +533,7 @@ function isLow(scan) {
 }
 
 function syncLabel(scan) {
-    if (scan.prediction_source === 'mock') return `${scan.is_synced ? 'Tersinkron' : 'Tersimpan lokal'} · Simulasi prediksi`;
+    if (scan.prediction_source === 'mock') return `${scan.is_synced ? 'Tersinkron' : 'Tersimpan lokal'} · ${MOCK_PREDICTION_LABEL}`;
     return scan.is_synced ? 'Tersinkron' : 'Belum tersinkron';
 }
 

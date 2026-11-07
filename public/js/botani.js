@@ -1,3 +1,4 @@
+import { MOCK_PREDICTION_LABEL } from './config.js';
 import { staffSession, logoutStaff, forgetStaffSession } from './auth.js';
 import { initializeDashboard } from './dashboard.js';
 import { consultationService, consultationStatus } from './consultations.js';
@@ -74,7 +75,7 @@ function initialize() {
     function showDetail(ticket) {
         const confidence = ticket.confidence_score == null ? 'belum tersedia'
             : new Intl.NumberFormat('id-ID', { style: 'percent' }).format(Number(ticket.confidence_score));
-        el('ticket-detail').textContent = `${ticket.predicted_class || 'Kelas belum tersedia'} · Keyakinan ${confidence} · ${consultationStatus(ticket.status)}${demo ? ' · Simulasi konsultasi lokal' : ' · Konsultasi nyata'}${ticket.prediction_source === 'mock' ? ' · Simulasi prediksi' : ''}`;
+        el('ticket-detail').textContent = `${ticket.predicted_class || 'Kelas belum tersedia'} · Keyakinan ${confidence} · ${consultationStatus(ticket.status)}${demo ? ' · Simulasi konsultasi lokal' : ' · Konsultasi nyata'}${ticket.prediction_source === 'mock' ? ' · ' + MOCK_PREDICTION_LABEL : ''}`;
     }
 
     async function loadTickets() {
@@ -102,7 +103,7 @@ function initialize() {
                 if (mine && !selected && location.hash === '#obrolan' && sessionStorage.getItem(conversationKey) === String(ticket.id)) restore = ticket;
                 const row = document.createElement('li');
                 const title = document.createElement('p');
-                title.textContent = `Tiket ${ticket.id}${demo ? ' · Simulasi konsultasi lokal' : ' · Konsultasi nyata'}${Number(ticket.prediction_simulated) || ticket.prediction_source === 'mock' ? ' · Simulasi prediksi' : ''}`;
+                title.textContent = `Tiket ${ticket.id}${demo ? ' · Simulasi konsultasi lokal' : ' · Konsultasi nyata'}${Number(ticket.prediction_simulated) || ticket.prediction_source === 'mock' ? ' · ' + MOCK_PREDICTION_LABEL : ''}`;
                 const badge = document.createElement('span');
                 badge.className = 'badge';
                 badge.textContent = consultationStatus(ticket.status);

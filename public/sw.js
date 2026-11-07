@@ -1,5 +1,5 @@
 const cachePrefix = 'pisanglens-shell-';
-const cacheName = `${cachePrefix}v10`;
+const cacheName = `${cachePrefix}v12`;
 const shellUrls = [
     './',
     './index.html',
@@ -24,6 +24,7 @@ const shellUrls = [
     './js/db.js',
     './js/dictionary.js',
     './js/petani.js',
+    './js/petani.js?v=automatic-2',
     './js/sync.js',
     './js/consultations.js',
     './js/chat.js',
@@ -34,7 +35,9 @@ const shellUrls = [
 ].map(path => new URL(path, self.registration.scope).href);
 
 self.addEventListener('install', event => {
-    event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(shellUrls)).then(() => self.skipWaiting()));
+    event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(
+        shellUrls.map(url => new Request(url, { cache: 'reload' }))
+    )).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
