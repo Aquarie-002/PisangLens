@@ -16,6 +16,7 @@
                 <nav class="dashboard-nav" aria-label="Navigasi Admin">
                     <a href="#dashboard">Beranda</a>
                     <a href="#verifikasi">Verifikasi Botani</a>
+                    <a href="#dataset">Kurasi Data Latih</a>
                     <a href="#direktori">Direktori Botani</a>
                 </nav>
                 <p>Menjaga akses pakar untuk konsultasi yang tepercaya.</p>
@@ -48,6 +49,13 @@
                     </div>
                     <p id="decision-feedback" class="dashboard-notice" role="status"></p>
                     <ul class="history-list verification-list" id="verification-list" aria-label="Daftar permohonan botani"></ul>
+                </section>
+                <section id="dataset" data-dashboard-section data-title="Kurasi Data Latih" class="panel" hidden>
+                    <h2>Foto dan label hasil peninjauan botani</h2>
+                    <p>Kandidat yang disetujui tersedia untuk pelatihan model berikutnya. Model aktif tetap digunakan sampai model baru selesai dievaluasi dan dirilis.</p>
+                    <button id="learning-refresh" class="secondary" type="button">Muat ulang kandidat</button>
+                    <p id="learning-status" role="status"></p>
+                    <ul id="learning-list" class="history-list"></ul>
                 </section>
                 <dialog id="verification-confirm">
                     <h2>Konfirmasi keputusan</h2><p id="confirmation-detail"></p>

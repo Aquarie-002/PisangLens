@@ -6,7 +6,7 @@
     <title>Ruang Petani | PisangLENS</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="css/app.css">
-    <script type="module" src="js/petani.js?v=automatic-2"></script>
+    <script type="module" src="js/petani.js?v=real-3"></script>
 </head>
 <body>
     <header class="site-header">
@@ -20,7 +20,8 @@
             <p class="eyebrow">CATATAN KESEHATAN DAUN</p>
             <h1 id="greeting">Ruang Petani</h1>
             <p id="account-mode"></p>
-            <p><strong id="offline-state" role="status">Belum siap</strong> <span id="offline-detail">· Model lokal belum tersedia.</span></p>
+            <p><strong id="offline-state" role="status">Belum siap</strong> <span id="offline-detail">· Model AI lokal belum diverifikasi.</span></p>
+            <button id="offline-retry" class="secondary" type="button">Periksa kesiapan luring</button>
         </div>
         <p id="session-message" class="message" role="status"></p>
         <section class="view" id="kamera" aria-labelledby="camera-title">
@@ -41,7 +42,7 @@
             </div>
             <div class="panel">
                 <h2>Analisis foto</h2>
-                <p>Model AI belum tersedia. Untuk sementara, hasil uji tetap ditampilkan; foto hanya diperiksa kualitas pencahayaannya.</p>
+                <p id="prediction-mode">Foto dianalisis oleh model AI di perangkat ini. Hasil merupakan identifikasi awal kondisi daun.</p>
                 <button id="predict" type="button" disabled>Analisis foto</button>
                 <p id="prediction-message" class="message" role="status"></p>
                 <section id="prediction-result" aria-labelledby="result-title" hidden>

@@ -7,11 +7,22 @@ require_once dirname(__DIR__, 3) . '/lib/auth.php';
 authEndpoint('POST', static function (): array {
     $tokenHash = bearerHash();
     $pdo = authDatabase();
-    requireAccount($pdo, $tokenHash, 'admin');
+    $user = requireAccount($pdo, $tokenHash, 'admin');
     $body = authBody();
     $type = $body['approval_type'] ?? null;
     if ($type === 'retraining') {
-        authError(501);
+        $target = $body['target_id'] ?? null;
+        $decision = $body['decision'] ?? null;
+        if ((!is_int($target) && !is_string($target)) || !preg_match('/^[1-9][0-9]{0,18}$/D', (string) $target) || !in_array($decision, ['approve', 'reject'], true)) authError(422);
+        $status = $decision === 'approve' ? 'approved' : 'rejected';
+        $update = $pdo->prepare("UPDATE retraining_queue q JOIN scans s ON s.id = q.scan_id
+            SET q.status = ?, q.approved_by = ?, q.decided_at = UTC_TIMESTAMP()
+            WHERE q.id = ? AND q.status = 'pending' AND q.review_outcome = 'valid'
+            AND q.corrected_label IN ('Healthy', 'Pestalotiopsis Leaf Blight', 'Sigatoka', 'Cordana Leaf Spot')
+            AND s.prediction_source <> 'mock' AND s.model_version NOT LIKE '%mock%'");
+        $update->execute([$status, $user['id'], (string) $target]);
+        if ($update->rowCount() !== 1) authError(409);
+        return ['updated_status' => $status];
     }
     $target = $body['target_id'] ?? null;
     $decision = $body['decision'] ?? null;

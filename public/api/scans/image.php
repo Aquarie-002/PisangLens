@@ -10,8 +10,14 @@ authEndpoint('GET', static function (): array {
     $query = $pdo->prepare('SELECT s.user_id, s.image_path, c.botani_id FROM scans s LEFT JOIN consultations c ON c.scan_id = s.id WHERE s.id = ?');
     $query->execute([$id]);
     $scan = $query->fetch();
+    $curatedAdmin = false;
+    if ($scan && $user['role'] === 'admin') {
+        $curation = $pdo->prepare('SELECT q.id FROM retraining_queue q JOIN scans s ON s.id = q.scan_id WHERE q.scan_id = ? AND s.prediction_source <> ? LIMIT 1');
+        $curation->execute([$id, 'mock']);
+        $curatedAdmin = (bool) $curation->fetchColumn();
+    }
     if (!$scan || !(($user['role'] === 'petani' && (string) $scan['user_id'] === (string) $user['id']) ||
-        ($user['role'] === 'botani' && (bool) $user['is_verified'] && (string) $scan['botani_id'] === (string) $user['id']))) authError(403);
+        ($user['role'] === 'botani' && (bool) $user['is_verified'] && (string) $scan['botani_id'] === (string) $user['id']) || $curatedAdmin)) authError(403);
     $settings = require dirname(__DIR__, 3) . '/config/config.php';
     $root = realpath($settings['uploads_dir']);
     $path = $root ? realpath($root . '/' . basename($scan['image_path'])) : false;

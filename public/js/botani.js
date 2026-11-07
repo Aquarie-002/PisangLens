@@ -6,6 +6,7 @@ import { openConversation } from './chat.js';
 import { scanPhoto } from './photos.js';
 import { requestApi } from './api.js';
 import { initializeRegionExamples } from './region-examples.js';
+import { expertReview } from './learning.js';
 
 const demo = new URLSearchParams(location.search).get('demo') === '1';
 const session = demo ? null : staffSession('botani');
@@ -24,6 +25,7 @@ function initialize() {
     let generation = 0;
     let disposeChat = () => {};
     let disposePhoto = () => {};
+    let disposeReview = () => {};
     let refreshingProfile = false;
     let savingProfile = false;
     let profileRevision = 0;
@@ -49,6 +51,7 @@ function initialize() {
         selected = null;
         disposeChat();
         disposePhoto();
+        disposeReview();
         el('ticket-list').replaceChildren();
         el('assigned-list').replaceChildren();
         el('ticket-detail').replaceChildren();
@@ -146,6 +149,8 @@ function initialize() {
             showDetail(owned);
             disposePhoto = scanPhoto(el('ticket-photo'), owned, demo ? null : session.token, valid);
             location.hash = 'obrolan';
+            disposeReview = expertReview(el('training-review'), { ticket: owned, token: session?.token, demo,
+                active: () => valid() && location.hash === '#obrolan' && selected?.id === owned.id });
             disposeChat = openConversation({
                 service, ticket: owned, list: el('chat-messages'), status: el('chat-status'), form: el('reply-form'),
                 senderId: demo ? 'demo' : session.user_id, demo,

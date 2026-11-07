@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
-import { predict, setPredictionScenario } from '../public/js/predict.js';
+import { predictMock as predict, setPredictionScenario } from '../public/js/predict-mock.js';
+import { predict as predictReal } from '../public/js/predict.js';
 import { consultationEligible } from '../public/js/consultations.js';
-import { USE_MOCK_PREDICTION, MOCK_PREDICTION_LABEL } from '../public/js/config.js';
+import { USE_MOCK_PREDICTION, MOCK_PREDICTION_LABEL, CONFIDENCE_THRESHOLD } from '../public/js/config.js';
 
-assert.equal(USE_MOCK_PREDICTION, true);
+assert.equal(USE_MOCK_PREDICTION, false);
+assert.equal(CONFIDENCE_THRESHOLD, 0.8);
+assert.equal(consultationEligible({ predicted_class: 'Healthy', confidence_score: 0.8 }), false);
+assert.equal(consultationEligible({ predicted_class: 'Healthy', confidence_score: 0.799999 }), true);
 assert.equal(MOCK_PREDICTION_LABEL, 'Simulasi prediksi — bukan hasil analisis foto');
 const canvas = { width: 224, height: 224 };
 const defaultResult = await predict(canvas);
@@ -27,3 +31,9 @@ setPredictionScenario('healthy');
 await assert.rejects(predict({width: 0, height: 0}), /Foto belum tersedia/);
 assert.deepEqual(await predict(canvas), defaultResult);
 console.log('PASS: error fixture, missing image rejection and default restoration');
+await assert.rejects(predictReal({ width: 0, height: 0 }), /Foto belum tersedia/);
+const pixels = new Uint8ClampedArray(224 * 224 * 4).fill(128);
+for (let i = 3; i < pixels.length; i += 4) pixels[i] = 255;
+globalThis.fetch = async () => { throw new Error('Intentional unavailable model asset'); };
+await assert.rejects(predictReal({ width: 224, height: 224, getContext: () => ({ getImageData: () => ({ width: 224, height: 224, data: pixels }) }) }), /Analisis AI lokal gagal/);
+console.log('PASS: real model failures reject without simulation fallback');

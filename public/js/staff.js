@@ -2,6 +2,7 @@ import { requestApi } from './api.js';
 import { forgetStaffSession, logoutStaff, staffSession } from './auth.js';
 import { initializeDashboard } from './dashboard.js';
 import { initializeDirectory } from './directory.js';
+import { initializeLearningQueue } from './learning.js';
 
 const demo = new URLSearchParams(location.search).get('demo') === '1';
 const session = demo ? null : staffSession('admin');
@@ -24,6 +25,7 @@ function initialize() {
     let pending;
     let generation = 0;
     panel.hidden = false;
+    initializeLearningQueue({ token: session?.token, demo, active: () => demo || staffSession('admin')?.token === session.token });
     const loadDirectory = initializeDirectory({
         root: document.querySelector('#admin-directory'), admin: true, demo, token: session?.token,
         valid: () => demo || staffSession('admin')?.token === session.token,

@@ -1,7 +1,7 @@
 import { requestApi } from './api.js';
 import { activeProfile, forgetToken, logout, PROFILE_KEY, sessionToken } from './auth.js';
 import { capture, closeCamera, openCamera, uploadPhoto } from './camera.js';
-import { CONFIDENCE_THRESHOLD, FALLBACK, MOCK_PREDICTION_LABEL } from './config.js';
+import { CONFIDENCE_THRESHOLD, FALLBACK, MOCK_PREDICTION_LABEL, USE_MOCK_PREDICTION } from './config.js';
 import { consultationEligible, consultationService, consultationStatus } from './consultations.js';
 import { openConversation } from './chat.js';
 import { encryptMessage } from './crypto.js';
@@ -10,6 +10,7 @@ import { initializeDirectory } from './directory.js';
 import { saveScan, scansFor } from './db.js';
 import { conditions } from './dictionary.js';
 import { predict } from './predict.js';
+import { prepareLocalOffline } from './offline.js';
 import { syncScans } from './sync.js';
 
 const element = id => document.getElementById(id);
@@ -61,6 +62,8 @@ function initialize(account) {
     element('greeting').textContent = `Halo, ${account.name || 'Petani'}`;
     element('account-mode').textContent = account.demo ? 'Simulasi masuk · Profil demo lokal' : 'Akun petani';
     element('guidance').textContent = FALLBACK;
+    element('prediction-mode').textContent = USE_MOCK_PREDICTION ? MOCK_PREDICTION_LABEL
+        : 'Foto dianalisis oleh model AI di perangkat ini. Hasil merupakan identifikasi awal kondisi daun.';
     element('farmer-app').hidden = false;
     element('farmer-nav').hidden = false;
     const loadDirectory = initializeDirectory({ root: element('farmer-directory'), demo: account.demo, token: sessionToken(account), valid: sameAccount });
@@ -515,7 +518,7 @@ function initialize(account) {
     });
     window.addEventListener('pageshow', event => {
         enforceAccount();
-        if (event.persisted && sameAccount()) { changeView(); void trySync(); }
+        if (event.persisted && sameAccount()) { changeView(); void trySync(); void prepareOffline(); }
     });
     window.addEventListener('pagehide', () => { consultationRequest++; stopCamera(); disposeChat(); disposeConsultationPhoto(); photoCleanups.forEach(dispose => dispose()); });
     window.addEventListener('online', trySync);
@@ -571,19 +574,16 @@ async function prepareOffline() {
     }
     status.textContent = 'Menyiapkan';
     detail.textContent = '· Memeriksa penyimpanan halaman.';
-    let timeout;
+    const retry = element('offline-retry');
+    if (retry) retry.disabled = true;
     try {
-        await navigator.serviceWorker.register('./sw.js');
-        await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise((_, reject) => { timeout = setTimeout(reject, 8000); }),
-        ]);
-        status.textContent = 'Belum siap';
-        detail.textContent = '· Model lokal asli belum tersedia.';
-    } catch {
+        await prepareLocalOffline();
+        status.textContent = 'Siap luring';
+        detail.textContent = '· Model AI lokal dan berkas aplikasi sudah diverifikasi.';
+    } catch (error) {
         status.textContent = 'Gagal';
-        detail.textContent = '· Halaman belum dapat disiapkan. Muat ulang untuk mencoba lagi.';
+        detail.textContent = '· ' + error.message;
     } finally {
-        clearTimeout(timeout);
+        if (retry) { retry.disabled = false; retry.onclick = () => void prepareOffline(); }
     }
 }
